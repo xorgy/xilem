@@ -103,34 +103,68 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
             })
             .build(&event_loop)
             .unwrap();
-        let mut main_state = MainState::new(self.app, window);
+        let mut main_state: Option<MainState<'_, T, V>> = None;
+        let mut app = Some(self.app);
+        let mut window = Some(window);
 
         event_loop
-            .run(move |event, elwt| {
-                if let winit::event::Event::WindowEvent { event: e, .. } = event {
-                    match e {
-                        WindowEvent::CloseRequested => elwt.exit(),
-                        WindowEvent::RedrawRequested => main_state.paint(),
-                        WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
+            .run(move |event, elwt| match event {
+                winit::event::Event::WindowEvent { event: e, .. } => match e {
+                    WindowEvent::CloseRequested => elwt.exit(),
+                    WindowEvent::RedrawRequested => {
+                        if let Some(main_state) = &mut main_state {
+                            main_state.paint()
+                        }
+                    }
+                    WindowEvent::Resized(winit::dpi::PhysicalSize { width, height }) => {
+                        if let Some(main_state) = &mut main_state {
                             main_state.size(Size {
                                 width: width.into(),
                                 height: height.into(),
                             });
                         }
-                        WindowEvent::ModifiersChanged(modifiers) => main_state.mods(modifiers),
-                        WindowEvent::CursorMoved {
-                            position: winit::dpi::PhysicalPosition { x, y },
-                            ..
-                        } => main_state.pointer_move(Point { x, y }),
-                        WindowEvent::CursorLeft { .. } => main_state.pointer_leave(),
-                        WindowEvent::MouseInput { state, button, .. } => match state {
-                            ElementState::Pressed => main_state.pointer_down(button),
-                            ElementState::Released => main_state.pointer_up(button),
-                        },
-                        WindowEvent::MouseWheel { delta, .. } => main_state.pointer_wheel(delta),
-                        _ => (),
                     }
+                    WindowEvent::ModifiersChanged(modifiers) => {
+                        if let Some(main_state) = &mut main_state {
+                            main_state.mods(modifiers)
+                        }
+                    }
+                    WindowEvent::CursorMoved {
+                        position: winit::dpi::PhysicalPosition { x, y },
+                        ..
+                    } => {
+                        if let Some(main_state) = &mut main_state {
+                            main_state.pointer_move(Point { x, y })
+                        }
+                    }
+                    WindowEvent::CursorLeft { .. } => {
+                        if let Some(main_state) = &mut main_state {
+                            main_state.pointer_leave()
+                        }
+                    }
+                    WindowEvent::MouseInput { state, button, .. } => match state {
+                        ElementState::Pressed => {
+                            if let Some(main_state) = &mut main_state {
+                                main_state.pointer_down(button)
+                            }
+                        }
+                        ElementState::Released => {
+                            if let Some(main_state) = &mut main_state {
+                                main_state.pointer_up(button)
+                            }
+                        }
+                    },
+                    WindowEvent::MouseWheel { delta, .. } => {
+                        if let Some(main_state) = &mut main_state {
+                            main_state.pointer_wheel(delta)
+                        }
+                    }
+                    _ => (),
+                },
+                winit::event::Event::Resumed => {
+                    main_state = Some(MainState::new(app.take().unwrap(), window.take().unwrap()));
                 }
+                _ => (),
             })
             .unwrap();
     }
