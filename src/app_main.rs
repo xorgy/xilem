@@ -28,6 +28,9 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+#[cfg(target_os = "android")]
+use winit::platform::android::activity::AndroidApp;
+
 use crate::{
     app::App,
     view::View,
@@ -39,6 +42,8 @@ use crate::{
 pub struct AppLauncher<T, V: View<T>> {
     title: String,
     app: App<T, V>,
+    #[cfg(target_os = "android")]
+    android_app: AndroidApp,
 }
 
 // The logic of this struct is mostly parallel to DruidHandler in win_handler.rs.
@@ -54,10 +59,20 @@ struct MainState<'a, T, V: View<T>> {
 }
 
 impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
+    #[cfg(not(target_os = "android"))]
     pub fn new(app: App<T, V>) -> Self {
         AppLauncher {
             title: "Xilem app".into(),
             app,
+        }
+    }
+
+    #[cfg(target_os = "android")]
+    pub fn new(app: App<T, V>, android_app: AndroidApp) -> Self {
+        AppLauncher {
+            title: "Xilem app".into(),
+            app,
+            android_app,
         }
     }
 
@@ -67,7 +82,18 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     }
 
     pub fn run(self) {
+        #[cfg(not(target_os = "android"))]
         let event_loop = EventLoop::new().unwrap();
+
+        #[cfg(target_os = "android")]
+        let event_loop = {
+            use winit::event_loop::EventLoopBuilder;
+            use winit::platform::android::EventLoopBuilderExtAndroid;
+            EventLoopBuilder::new()
+                .with_android_app(self.android_app)
+                .build()
+                .unwrap()
+        };
         event_loop.set_control_flow(ControlFlow::Wait);
         let _guard = self.app.rt.enter();
         let window = WindowBuilder::new()
@@ -126,6 +152,7 @@ where
                 PresentMode::AutoVsync,
             ))
             .unwrap();
+        window.set_ime_allowed(true);
         MainState {
             window,
             app,

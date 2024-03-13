@@ -1,6 +1,9 @@
 use xilem::view::{button, h_stack, switch, v_stack};
 use xilem::{view::View, App, AppLauncher};
 
+#[cfg(target_os = "android")]
+use xilem::winit::platform::android::activity::AndroidApp;
+
 fn app_logic(data: &mut AppData) -> impl View<AppData> {
     // here's some logic, deriving state for the view from our state
     let count = data.count;
@@ -38,22 +41,23 @@ struct AppData {
     is_on: bool,
 }
 
-fn main() {
-    /*
-    let app = Application::new().unwrap();
-    let mut window_builder = glazier::WindowBuilder::new(app.clone());
-    window_builder.resizable(false);
-    window_builder.set_size((WIDTH as f64 / 2., HEIGHT as f64 / 2.).into());
-    window_builder.set_handler(Box::new(xilem::WindowState::new()));
-    let window_handle = window_builder.build().unwrap();
-    window_handle.show();
-    app.run(None);
-    */
+#[allow(dead_code)]
+#[cfg(target_os = "android")]
+#[no_mangle]
+fn android_main(app: AndroidApp) {
     let data = AppData {
         count: 0,
         is_on: false,
     };
+    AppLauncher::new(App::new(data, app_logic), app).run()
+}
 
-    let app = App::new(data, app_logic);
-    AppLauncher::new(app).run();
+#[allow(dead_code)]
+#[cfg(not(target_os = "android"))]
+fn main() {
+    let data = AppData {
+        count: 0,
+        is_on: false,
+    };
+    AppLauncher::new(App::new(data, app_logic)).run()
 }

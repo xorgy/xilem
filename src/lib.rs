@@ -18,3 +18,5 @@ pub use geometry::Axis;
 
 pub use parley;
 pub use vello;
+
+pub use winit;

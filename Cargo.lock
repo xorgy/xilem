@@ -680,6 +680,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "example_hello"
+version = "0.1.0"
+dependencies = [
+ "xilem",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1554,7 +1561,7 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.0.1"
-source = "git+https://github.com/dfrg/parley?rev=4e6109f2ff5847a72dc77971b6fa0942b8474d88#4e6109f2ff5847a72dc77971b6fa0942b8474d88"
+source = "git+https://github.com/xorgy/parley?rev=a039b4c8658c9634fafebc6c3696035a704ebb7b#a039b4c8658c9634fafebc6c3696035a704ebb7b"
 dependencies = [
  "anyhow",
  "bytemuck",
