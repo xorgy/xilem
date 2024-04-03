@@ -5,10 +5,35 @@ use xilem::{view::View, App, AppLauncher};
 use xilem::winit::platform::android::activity::AndroidApp;
 
 fn app_logic(data: &mut AppData) -> impl View<AppData> {
-    // here's some logic, deriving state for the view from our state;
+    // here's some logic, deriving state for the view from our state
+    let count = data.count;
+    let label = if count == 1 {
+        "clicked 1 time".to_string()
+    } else {
+        format!("clicked {count} times")
+    };
 
     // The actual UI Code starts here
-    switch::<AppData, _>(data.is_on, |data, is_on| data.is_on = is_on)
+    v_stack((
+        button(label, |data: &mut AppData| {
+            println!("clicked");
+            data.count += 1;
+        }),
+        h_stack((
+            button("decrease", |data: &mut AppData| {
+                println!("clicked decrease");
+                data.count -= 1;
+            }),
+            button("reset", |data: &mut AppData| {
+                println!("clicked reset");
+                data.count = 0;
+            }),
+            switch(data.is_on, |data: &mut AppData, value: bool| {
+                data.is_on = value;
+            }),
+        )),
+    ))
+    .with_spacing(20.0)
 }
 
 struct AppData {

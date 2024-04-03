@@ -10,6 +10,10 @@ license.workspace = true
 crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+path="src/lib.rs"
+name="example-hello"
+
 [dependencies]
 xilem = { path = "../" }
 
