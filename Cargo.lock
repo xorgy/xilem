@@ -683,6 +683,8 @@ dependencies = [
 name = "example_hello"
 version = "0.1.0"
 dependencies = [
+ "taffy",
+ "vello",
  "xilem",
 ]
 
@@ -1561,7 +1563,6 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.0.1"
-source = "git+https://github.com/xorgy/parley?rev=a039b4c8658c9634fafebc6c3696035a704ebb7b#a039b4c8658c9634fafebc6c3696035a704ebb7b"
 dependencies = [
  "anyhow",
  "bytemuck",

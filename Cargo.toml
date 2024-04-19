@@ -58,7 +58,7 @@ xilem_core.workspace = true
 taffy = { version = "0.4.0", optional = true }
 vello = "0.1.0"
 wgpu = "0.19.3"
-parley = { git = "https://github.com/xorgy/parley", rev = "a039b4c8658c9634fafebc6c3696035a704ebb7b" }
+parley = { path = "../parley" }
 tokio = { version = "1.35", features = ["full"] }
 futures-task = "0.3"
 bitflags = "2"

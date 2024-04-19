@@ -6,16 +6,22 @@ homepage.workspace = true
 repository.workspace = true
 license.workspace = true
 
+#[cfg(target_os = "android")]
 [lib]
 crate-type = ["cdylib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+#[cfg(not(target_os = "android"))]
 [[bin]]
 path="src/lib.rs"
 name="example-hello"
 
 [dependencies]
-xilem = { path = "../" }
+xilem = { path = "../", features = ["taffy"] }
+taffy = { version = "0.4.0" }
+vello = "0.1.0"
+
+
 
 [lints]
 workspace = true
