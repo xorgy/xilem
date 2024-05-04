@@ -1,9 +1,9 @@
 // Copyright 2022 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::HashSet;
-use std::time::Duration;
+use std::{collections::HashSet, sync::Arc, time::Duration};
 
+use accesskit::TreeUpdate;
 use parley::FontContext;
 use tokio::runtime::Runtime;
 use vello::{
@@ -13,14 +13,15 @@ use vello::{
 use xilem_core::{AsyncWake, MessageResult};
 
 use crate::widget::{
-    BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, PodFlags,
-    UpdateCx, ViewContext, WidgetState,
+    AccessCx, BoxConstraints, CxState, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod,
+    PodFlags, UpdateCx, ViewContext, WidgetState,
 };
 use crate::{
     view::{Cx, Id, View},
     widget::Event,
 };
 use crate::{IdPath, Message};
+use winit::window::Window;
 
 /// App is the native backend implementation of Xilem. It contains the code interacting with glazier
 /// and vello.
@@ -39,6 +40,7 @@ pub struct App<T, V: View<T>> {
     cursor_pos: Option<Point>,
     cx: Cx,
     font_cx: FontContext,
+    pub(crate) accesskit_connected: bool,
     pub(crate) rt: Runtime,
 }
 
@@ -146,18 +148,47 @@ where
             id: None,
             root_pod: None,
             events: Vec::new(),
-            root_state: WidgetState::new(crate::id::Id::next()),
+            root_state: WidgetState::new(Id::next()),
             size: Default::default(),
             new_size: Default::default(),
             cursor_pos: None,
             cx,
             font_cx: FontContext::default(),
+            accesskit_connected: false,
             rt,
         }
     }
 
     pub fn size(&mut self, size: Size) {
         self.new_size = size;
+    }
+
+    pub fn accessibility(&mut self, window: Arc<Window>) -> TreeUpdate {
+        let window_id = Id::next();
+        let mut update = TreeUpdate {
+            nodes: vec![],
+            tree: None,
+            focus: accesskit::NodeId(window_id.to_raw().into()),
+        };
+        self.ensure_root();
+        let root_pod = self.root_pod.as_mut().unwrap();
+        let mut window_node_builder = accesskit::NodeBuilder::new(accesskit::Role::Window);
+        window_node_builder.set_name("xilem window");
+        window_node_builder.set_children(vec![root_pod.id().into()]);
+        window_node_builder
+            .set_transform(Box::new(accesskit::Affine::scale(window.scale_factor())));
+        let window_node = window_node_builder.build();
+        update.nodes.push((window_id.into(), window_node));
+        update.tree = Some(accesskit::Tree::new(window_id.into()));
+        let mut cx_state =
+            CxState::new(&mut self.font_cx, &self.cx.tree_structure, &mut self.events);
+        let mut access_cx = AccessCx {
+            cx_state: &mut cx_state,
+            widget_state: &mut self.root_state,
+            update: &mut update,
+        };
+        root_pod.accessibility(&mut access_cx);
+        update
     }
 
     /// Run a paint cycle for the application.
@@ -234,6 +265,7 @@ where
             Event::MouseLeft() => {
                 self.cursor_pos = None;
             }
+            Event::TargetedAccessibilityAction(_) => {}
         }
 
         self.ensure_root();

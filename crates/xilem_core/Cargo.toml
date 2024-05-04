@@ -19,3 +19,4 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 workspace = true
 
 [dependencies]
+accesskit.workspace = true

@@ -1,8 +1,13 @@
 // Copyright 2022 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{num::NonZeroUsize, sync::Arc};
+use std::{
+    num::NonZeroUsize,
+    sync::{Arc, Mutex},
+};
 
+use accesskit::TreeUpdate;
+use accesskit_winit::{Adapter, Event as AccessKitEvent, WindowEvent as AccessKitWindowEvent};
 use vello::{
     kurbo::{Affine, Point, Size, Vec2},
     peniko::Color,
@@ -33,6 +38,7 @@ pub struct AppLauncher<T, V: View<T>> {
 // The logic of this struct is mostly parallel to DruidHandler in win_handler.rs.
 struct MainState<'a, T, V: View<T>> {
     window: Arc<Window>,
+    adapter: Arc<Mutex<Adapter>>,
     app: App<T, V>,
     render_cx: RenderContext,
     surface: RenderSurface<'a>,
@@ -56,8 +62,9 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
     }
 
     pub fn run(self) {
-        let event_loop = EventLoop::new().unwrap();
+        let event_loop = EventLoop::with_user_event().build().unwrap();
         event_loop.set_control_flow(ControlFlow::Wait);
+        let event_loop_proxy = event_loop.create_proxy();
         let _guard = self.app.rt.enter();
         #[allow(deprecated)]
         let window = event_loop
@@ -67,15 +74,24 @@ impl<T: Send + 'static, V: View<T> + 'static> AppLauncher<T, V> {
                         width: 1024.,
                         height: 768.,
                     })
-                    .with_title(self.title),
+                    .with_title(self.title)
+                    .with_visible(false),
             )
             .unwrap();
-        let mut main_state = MainState::new(self.app, window);
+
+        let adapter = Arc::new(Mutex::new(Adapter::with_event_loop_proxy(
+            &window,
+            event_loop_proxy.clone(),
+        )));
+        window.set_visible(true);
+        let mut main_state = MainState::new(self.app, Arc::new(window), adapter);
         let _ = event_loop.run_app(&mut main_state);
     }
 }
 
-impl<T: Send + 'static, V: View<T> + 'static> ApplicationHandler for MainState<'_, T, V> {
+impl<T: Send + 'static, V: View<T> + 'static> ApplicationHandler<AccessKitEvent>
+    for MainState<'_, T, V>
+{
     fn resumed(&mut self, _event_loop: &ActiveEventLoop) {}
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
         match event {
@@ -101,13 +117,22 @@ impl<T: Send + 'static, V: View<T> + 'static> ApplicationHandler for MainState<'
             _ => (),
         }
     }
+    fn user_event(&mut self, _: &ActiveEventLoop, user_event: AccessKitEvent) {
+        match user_event.window_event {
+            AccessKitWindowEvent::InitialTreeRequested => {
+                let tu = self.accesskit_tree();
+                self.adapter.lock().unwrap().update_if_active(|| tu);
+            }
+            AccessKitWindowEvent::ActionRequested(req) => self.accesskit_action(req),
+            AccessKitWindowEvent::AccessibilityDeactivated => (),
+        }
+    }
 }
 
 impl<'a, T: Send + 'static, V: View<T> + 'static> MainState<'a, T, V> {
-    fn new(app: App<T, V>, window: Window) -> Self {
+    fn new(app: App<T, V>, window: Arc<Window>, adapter: Arc<Mutex<Adapter>>) -> Self {
         let mut render_cx = RenderContext::new().unwrap();
         let size = window.inner_size();
-        let window = Arc::new(window);
         let surface = tokio::runtime::Handle::current()
             .block_on(render_cx.create_surface(
                 window.clone(),
@@ -117,7 +142,8 @@ impl<'a, T: Send + 'static, V: View<T> + 'static> MainState<'a, T, V> {
             ))
             .unwrap();
         MainState {
-            window,
+            window: window.clone(),
+            adapter: adapter.clone(),
             app,
             render_cx,
             surface,
@@ -128,12 +154,26 @@ impl<'a, T: Send + 'static, V: View<T> + 'static> MainState<'a, T, V> {
         }
     }
 
+    fn accesskit_tree(&mut self) -> TreeUpdate {
+        self.app.accesskit_connected = true;
+        self.app.paint();
+        self.app.accessibility(self.window.clone())
+    }
+
+    fn accesskit_action(&mut self, request: accesskit::ActionRequest) {
+        self.app
+            .window_event(Event::TargetedAccessibilityAction(request));
+        self.app.accessibility(self.window.clone());
+        self.window.request_redraw();
+    }
+
     fn size(&mut self, size: Size) {
         self.app.size(size * 1.0 / self.window.scale_factor());
     }
 
     fn mods(&mut self, mods: Modifiers) {
         self.main_pointer.mods(mods);
+        self.window.request_redraw();
     }
 
     fn pointer_move(&mut self, pos: Point) {

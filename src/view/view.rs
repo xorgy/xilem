@@ -22,7 +22,7 @@ xilem_core::generate_adapt_state_view! {View, Cx, ChangeFlags; + Send}
 #[derive(Clone)]
 pub struct Cx {
     id_path: IdPath,
-    element_id_path: Vec<crate::id::Id>, // Note that this is the widget id type.
+    element_id_path: IdPath, // Note that this is the widget id type.
     req_chan: SyncSender<IdPath>,
     pub(crate) tree_structure: TreeStructure,
     pub(crate) pending_async: HashSet<Id>,
@@ -72,7 +72,7 @@ impl Cx {
     }
 
     /// Return the element id of the current element/widget
-    pub fn element_id(&self) -> crate::id::Id {
+    pub fn element_id(&self) -> Id {
         *self
             .element_id_path
             .last()
@@ -108,7 +108,7 @@ impl Cx {
         E: Widget + 'static,
         F: FnOnce(&mut Cx) -> (Id, S, E),
     {
-        let pod_id = crate::id::Id::next();
+        let pod_id = Id::next();
         self.element_id_path.push(pod_id);
         let (id, state, element) = f(self);
         self.element_id_path.pop();

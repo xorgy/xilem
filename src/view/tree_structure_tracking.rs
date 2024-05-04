@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    id::Id,
     view::ElementsSplice,
     widget::{ChangeFlags, Pod},
 };
-use xilem_core::VecSplice;
+use xilem_core::{Id, VecSplice};
 
 use super::Cx;
 

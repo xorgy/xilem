@@ -3,10 +3,12 @@
 
 use crate::geometry::Axis;
 use crate::widget::{BoxConstraints, Event};
+
+use accesskit::NodeId;
 use vello::kurbo::Size;
 use vello::Scene;
 
-use super::{contexts::LifeCycleCx, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx, Widget};
+use super::{AccessCx, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, UpdateCx, Widget};
 
 /// LinearLayout is a simple widget which does layout for a ViewSequence.
 ///
@@ -69,6 +71,23 @@ impl Widget for LinearLayout {
         }
 
         self.axis.pack(major_used, max_minor)
+    }
+
+    fn accessibility(&mut self, cx: &mut AccessCx) {
+        for child in &mut self.children {
+            child.accessibility(cx);
+        }
+
+        if cx.is_requested() {
+            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
+            builder.set_children(
+                self.children
+                    .iter()
+                    .map(|pod| pod.id().into())
+                    .collect::<Vec<NodeId>>(),
+            );
+            cx.push_node(builder);
+        }
     }
 
     fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

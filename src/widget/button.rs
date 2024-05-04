@@ -1,6 +1,8 @@
 // Copyright 2022 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::ops::Deref;
+
 use parley::Layout;
 use vello::{
     kurbo::{Affine, Insets, Size},
@@ -13,7 +15,8 @@ use crate::{IdPath, Message};
 use super::{
     contexts::LifeCycleCx,
     piet_scene_helpers::{self, UnitPoint},
-    BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx, Widget,
+    AccessCx, BoxConstraints, ChangeFlags, Event, EventCx, LayoutCx, LifeCycle, PaintCx, UpdateCx,
+    Widget,
 };
 
 pub struct Button {
@@ -55,6 +58,13 @@ impl Widget for Button {
                 cx.set_active(false);
                 cx.request_paint();
             }
+            Event::TargetedAccessibilityAction(request) => {
+                if request.action == accesskit::Action::Default
+                    && cx.is_accesskit_target(request.target)
+                {
+                    cx.add_message(Message::new(self.id_path.clone(), ()));
+                }
+            }
             _ => (),
         };
     }
@@ -92,6 +102,13 @@ impl Widget for Button {
         //(Size::new(10.0, min_height), size)
         cx.request_paint();
         bc.constrain(size)
+    }
+
+    fn accessibility(&mut self, cx: &mut AccessCx) {
+        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::Button);
+        builder.set_name(self.label.deref());
+        builder.set_default_action_verb(accesskit::DefaultActionVerb::Click);
+        cx.push_node(builder);
     }
 
     fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

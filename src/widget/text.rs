@@ -104,6 +104,12 @@ impl Widget for TextWidget {
         self.layout_text(cx.font_cx(), bc)
     }
 
+    fn accessibility(&mut self, cx: &mut super::AccessCx) {
+        let mut builder = accesskit::NodeBuilder::new(accesskit::Role::StaticText);
+        builder.set_value(self.text.clone());
+        cx.push_node(builder);
+    }
+
     fn paint(&mut self, _cx: &mut PaintCx, scene: &mut Scene) {
         if let Some(layout) = &self.layout {
             crate::text::render_text(scene, Affine::IDENTITY, layout);

@@ -13,11 +13,11 @@ use vello::{
 };
 
 use super::widget::{AnyWidget, Widget};
-use crate::id::Id;
 use crate::Axis;
+use xilem_core::Id;
 
 use super::{
-    contexts::LifeCycleCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle, PaintCx,
+    AccessCx, BoxConstraints, CxState, Event, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx,
     UpdateCx,
 };
 
@@ -140,6 +140,10 @@ impl WidgetState {
     fn request(&mut self, flags: PodFlags) {
         self.flags |= flags;
     }
+
+    pub(crate) fn window_origin(&self) -> Point {
+        self.parent_window_origin + self.origin.to_vec2()
+    }
 }
 
 impl Pod {
@@ -261,6 +265,13 @@ impl Pod {
                     Pod::set_hot_state(&mut self.widget, &mut self.state, cx.cx_state, None);
                 had_active || hot_changed
             }
+            Event::TargetedAccessibilityAction(_action) => {
+                // println!("TODO: {:?}", action);
+                // self.state
+                //     .sub_tree
+                //     .may_contain(&Id::try_from_accesskit(action.target).unwrap())
+                true
+            }
         };
         if recurse {
             // This clears the has_active state. Pod needs to clear this state since merge up can
@@ -378,6 +389,22 @@ impl Pod {
             widget_state: &mut self.state,
         };
         self.widget.compute_max_intrinsic(axis, &mut child_cx, bc)
+    }
+
+    pub fn accessibility(&mut self, cx: &mut AccessCx) {
+        if self.state.flags.intersects(
+            PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
+        ) {
+            let mut child_cx = AccessCx {
+                cx_state: cx.cx_state,
+                widget_state: &mut self.state,
+                update: cx.update,
+            };
+            self.widget.accessibility(&mut child_cx);
+            self.state.flags.remove(
+                PodFlags::REQUEST_ACCESSIBILITY | PodFlags::DESCENDANT_REQUESTED_ACCESSIBILITY,
+            );
+        }
     }
 
     pub fn paint_raw(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

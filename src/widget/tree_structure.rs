@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::id::Id;
 use std::collections::HashMap;
+use xilem_core::Id;
 
 /// The pure structure (parent/children relations via ids) of the widget tree.
 #[derive(Debug, Default, Clone)]

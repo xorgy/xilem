@@ -6,15 +6,16 @@
 //! There's a lot more functionality in the Druid version, including
 //! control over scrolling axes, ability to scroll to content, etc.
 
-use crate::id::Id;
 use crate::Axis;
+use xilem_core::Id;
+
 use vello::kurbo::{Affine, Size, Vec2};
 use vello::peniko::Mix;
 use vello::Scene;
 
 use super::{BoxConstraints, ScrollDelta, Widget};
 
-use super::{contexts::LifeCycleCx, Event, EventCx, LayoutCx, LifeCycle, PaintCx, Pod, UpdateCx};
+use super::{AccessCx, Event, EventCx, LayoutCx, LifeCycle, LifeCycleCx, PaintCx, Pod, UpdateCx};
 
 // This number can be related to a platform detail, for example
 // on Windows there is SPI_GETWHEELSCROLLLINES
@@ -148,6 +149,16 @@ impl Widget for ScrollView {
         }
 
         size
+    }
+
+    fn accessibility(&mut self, cx: &mut AccessCx) {
+        self.child.accessibility(cx);
+
+        if cx.is_requested() {
+            let mut builder = accesskit::NodeBuilder::new(accesskit::Role::GenericContainer);
+            builder.set_children([self.child.id().into()]);
+            cx.push_node(builder);
+        }
     }
 
     fn paint(&mut self, cx: &mut PaintCx, scene: &mut Scene) {

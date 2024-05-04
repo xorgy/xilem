@@ -66,6 +66,8 @@ wayland = ["winit/wayland"]
 taffy = ["dep:taffy"]
 
 [dependencies]
+accesskit.workspace = true
+accesskit_winit.workspace = true
 xilem_core.workspace = true
 vello.workspace = true
 wgpu.workspace = true

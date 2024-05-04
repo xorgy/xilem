@@ -4142,6 +4142,8 @@ dependencies = [
 name = "xilem_classic"
 version = "0.1.0"
 dependencies = [
+ "accesskit",
+ "accesskit_winit",
  "bitflags 2.5.0",
  "fnv",
  "futures-task",
@@ -4159,6 +4161,9 @@ dependencies = [
 [[package]]
 name = "xilem_core"
 version = "0.1.0"
+dependencies = [
+ "accesskit",
+]
 
 [[package]]
 name = "xilem_web"
