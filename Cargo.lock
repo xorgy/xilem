@@ -942,8 +942,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "dpi"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
+source = "git+https://github.com/xorgy/winit?rev=6887543392c3ceaaf368d6ec11d3ff57697980f0#6887543392c3ceaaf368d6ec11d3ff57697980f0"
 
 [[package]]
 name = "dwrote"
@@ -4632,8 +4631,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "winit"
 version = "0.30.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4225ddd8ab67b8b59a2fee4b34889ebf13c0460c1c3fa297c58e21eb87801b33"
+source = "git+https://github.com/xorgy/winit?rev=6887543392c3ceaaf368d6ec11d3ff57697980f0#6887543392c3ceaaf368d6ec11d3ff57697980f0"
 dependencies = [
  "ahash",
  "android-activity",
@@ -4648,6 +4646,7 @@ dependencies = [
  "core-graphics",
  "cursor-icon",
  "dpi",
+ "jni",
  "js-sys",
  "libc",
  "memmap2",

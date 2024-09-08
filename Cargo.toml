@@ -110,10 +110,10 @@ wgpu = "0.20.1"
 kurbo = "0.11.0"
 parley = "0.1.0"
 peniko = "0.1.1"
-winit = "0.30.4"
+winit = { git = "https://github.com/xorgy/winit", rev = "6887543392c3ceaaf368d6ec11d3ff57697980f0" }
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
-dpi = "0.1.1"
+dpi = { git = "https://github.com/xorgy/winit", rev = "6887543392c3ceaaf368d6ec11d3ff57697980f0" }
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.6.0"
@@ -121,3 +121,6 @@ accesskit = "0.16.0"
 accesskit_winit = "0.22.0"
 nv-flip = "0.1.2"
 time = "0.3.36"
+
+[patch.crates-io]
+winit = { git = "https://github.com/xorgy/winit", rev = "6887543392c3ceaaf368d6ec11d3ff57697980f0" }
